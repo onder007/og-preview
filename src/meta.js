@@ -91,13 +91,29 @@ function hostOf(url) {
   }
 }
 
-// What each platform would read. Image is '' when the tag is missing or relative,
-// because crawlers cannot use a relative URL either.
+// localhost and loopback, private or link-local IP literals (new URL already normalises 0x7f.1 and the like).
+// ponytail: names that only resolve to a private IP (router.lan) are not caught; that needs a DNS lookup.
+export function isPrivateHost(host) {
+  const h = host.toLowerCase().replace(/^\[|\]$/g, '');
+  if (h === 'localhost' || h.endsWith('.localhost')) return true;
+  if (h.includes(':')) return h === '::1' || /^(f[cd]|fe[89ab])/.test(h);
+  return /^(0|10|127)\./.test(h) || /^(192\.168|169\.254)\./.test(h) || /^172\.(1[6-9]|2\d|3[01])\./.test(h);
+}
+
+// An image on a private address while the page itself is public: crawlers cannot fetch it (a typical
+// leftover of a build-time base URL like http://localhost:3000), and the popup does not load it either,
+// so a page cannot use the extension to send requests into the local network.
+export function isPrivateImage(url, pageUrl) {
+  return isPrivateHost(hostOf(url)) && !isPrivateHost(hostOf(pageUrl));
+}
+
+// What each platform would read. Image is '' when the tag is missing, relative or on a private
+// address, because crawlers cannot use those either.
 export function buildCards(collected) {
   const page = crawlerView(collected);
   const m = toMap(page.metas);
   const pick = (...keys) => keys.map((k) => m[k]).find(Boolean) || '';
-  const absolute = (url) => (isAbsolute(url) ? url : '');
+  const absolute = (url) => (isAbsolute(url) && !isPrivateImage(url, page.url) ? url : '');
   const domain = hostOf(pick('og:url') || page.url) || hostOf(page.url);
 
   const og = {
@@ -119,12 +135,13 @@ export function buildCards(collected) {
   };
 }
 
-// URL to measure: the og:image (or twitter:image) resolved against the page.
+// URL to measure: the og:image (or twitter:image) resolved against the page, '' if it is on a private address.
 export function imageUrl(collected) {
   const page = crawlerView(collected);
   const m = toMap(page.metas);
   const raw = m['og:image'] || m['og:image:url'] || m['twitter:image'] || '';
-  return raw ? resolve(raw, page.url) : '';
+  const url = raw ? resolve(raw, page.url) : '';
+  return isPrivateImage(url, page.url) ? '' : url;
 }
 
 // imageSize: {width, height} once loaded, null if it failed or timed out, undefined if not checked.
@@ -140,6 +157,8 @@ export function findIssues(collected, imageSize) {
   for (const key of ['og:image', 'og:image:url', 'twitter:image']) {
     if (m[key] && !isAbsolute(m[key])) {
       error(`${key} is a relative URL ("${m[key]}"). Crawlers need an absolute https:// URL.`);
+    } else if (m[key] && isPrivateImage(m[key], page.url)) {
+      error(`${key} points to a local or private address ("${m[key]}"). Crawlers cannot reach it.`);
     }
   }
 

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { toMap, buildCards, findIssues, imageUrl, isAbsolute, jsSetTags } from '../src/meta.js';
+import { toMap, buildCards, findIssues, imageUrl, isAbsolute, isPrivateHost, jsSetTags } from '../src/meta.js';
 
 const good = {
   url: 'https://www.example.com/post/1',
@@ -130,4 +130,26 @@ test('identical served HTML adds no issues; no served HTML falls back to the liv
   assert.deepEqual(findIssues({ ...good, served: { title: good.title, metas: good.metas } }, size), []);
   assert.deepEqual(jsSetTags(good), []);
   assert.equal(buildCards({ ...good, servedError: 'HTTP 403' }).linkedin.title, 'A good title');
+});
+
+test('isPrivateHost catches localhost and private, loopback, link-local literals', () => {
+  for (const h of ['localhost', 'app.localhost', '127.0.0.1', '10.1.2.3', '172.16.0.1', '172.31.9.9', '192.168.1.1', '169.254.169.254', '0.0.0.0', '[::1]', '[fd00::1]', '[fe80::1]']) {
+    assert.ok(isPrivateHost(h), h);
+  }
+  for (const h of ['example.com', '172.32.0.1', '8.8.8.8', 'fd-cdn.example.com', '[2606:4700::1]']) {
+    assert.ok(!isPrivateHost(h), h);
+  }
+  // new URL normalises other IPv4 spellings before the check.
+  assert.equal(new URL('http://0x7f.1/').hostname, '127.0.0.1');
+});
+
+test('an og:image on localhost is an error on a public page and is never loaded', () => {
+  const page = { ...good, metas: [['og:image', 'http://localhost:3000/og.png'], ...good.metas] };
+  assert.match(texts(findIssues(page, undefined)), /og:image points to a local or private address/);
+  assert.equal(imageUrl(page), '');
+  assert.equal(buildCards(page).linkedin.image, '');
+  // Local development: page and image both on localhost is fine.
+  const local = { ...page, url: 'http://localhost:3000/post/1' };
+  assert.equal(imageUrl(local), 'http://localhost:3000/og.png');
+  assert.deepEqual(findIssues(local, size), []);
 });
