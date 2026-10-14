@@ -21,6 +21,9 @@ Link previews are usually checked after the post is live, when a wrong image or 
 | Title longer than 60 characters | Warning |
 | `og:description` missing, or longer than 160 characters | Warning |
 | `twitter:card` missing or not a valid card type | Warning |
+| An `og:*`, `twitter:*` or `description` tag set or changed by JavaScript | Warning |
+
+The checks run on the HTML the server sends, because social crawlers usually do not run JavaScript. The popup re-requests the page from inside the tab (same origin, like a reload) and compares it with the live DOM, so tags added by a client-side router show up as a warning instead of passing silently. If that request fails (HTTP error, not HTML, or no answer within 8 seconds), the popup falls back to the live page and says so.
 
 The previews follow each platform's fallbacks: X reads `twitter:*` first and then `og:*`; LinkedIn and WhatsApp read `og:*`, then `<title>` and `meta name="description"`. A relative image URL is shown as "No image", because crawlers cannot resolve it either.
 
@@ -37,7 +40,7 @@ Open `chrome://extensions`, turn on Developer mode, click "Load unpacked" and pi
 
 ## Permissions
 
-Only `activeTab` and `scripting`. The extension reads the `<meta>` tags of the current tab when you click its icon. It has no background script, makes no network requests of its own (apart from loading the preview image) and stores nothing.
+Only `activeTab` and `scripting`. When you click its icon, the extension reads the `<meta>` tags of the current tab and requests the tab's own URL once more from inside the page (at most 1 MB, 8 second timeout). It does not contact any other server apart from loading the preview image, has no background script and stores nothing.
 
 ## Tests
 
@@ -57,9 +60,9 @@ python scripts/screenshot.py
 
 The script serves `test/fixtures` on `127.0.0.1:41917`, loads a copy of `dist` with an added host permission for that address (activeTab is only granted by a real click on the toolbar icon), opens the popup as a tab with `?tab=<id>` and writes `docs/popup-*.png`.
 
-| Complete tags | Dark mode |
-|---|---|
-| ![Popup on a page with complete tags](docs/popup-good.png) | ![Popup in dark mode](docs/popup-bad-dark.png) |
+| Complete tags | Tags set by JavaScript | Dark mode |
+|---|---|---|
+| ![Popup on a page with complete tags](docs/popup-good.png) | ![Popup on a page whose tags are set by JavaScript](docs/popup-spa.png) | ![Popup in dark mode](docs/popup-bad-dark.png) |
 
 ## Configuration
 
@@ -69,8 +72,9 @@ The thresholds live in `LIMITS` at the top of `src/meta.js`.
 
 - The card layouts are approximations of what each platform shows today. Platforms change their designs and cache old previews, so use their own debuggers before a big launch.
 - The 60 and 160 character limits are common guidelines, not limits published by each platform.
-- The popup reads the live page, including tags added by JavaScript. Social crawlers usually read only the served HTML, so such tags may show here but not on the platforms.
-- No checks yet for image file size, image format (SVG and WebP support differs per platform) or redirects.
+- The served HTML is requested with your cookies and your browser's user agent. Sites that serve different HTML to logged-out visitors or to crawler user agents (prerendering services) may give the platforms a different page than the one checked here.
+- Only the first 1 MB of the served HTML is read.
+- No checks yet for image file size, image format (SVG and WebP support differs per platform) or redirects of the image URL.
 - Browser pages (`chrome://`, the Chrome Web Store) cannot be read by extensions.
 - Not published on the Chrome Web Store.
 

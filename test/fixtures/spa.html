@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>App</title>
+  <meta property="og:title" content="App">
+  <meta property="og:description" content="Caching, smaller images and one parallel step took our CI from 14 to 7 minutes.">
+  <meta name="twitter:card" content="summary_large_image">
+  <script>
+    // Like a client-side router: the real share tags only exist after JavaScript runs.
+    document.querySelector('meta[property="og:title"]').content = 'How we cut our build time in half';
+    const image = document.createElement('meta');
+    image.setAttribute('property', 'og:image');
+    image.content = 'http://127.0.0.1:41917/cover-1200x630.png';
+    document.head.append(image);
+  </script>
+</head>
+<body><h1>Fixture page whose share tags are set by JavaScript</h1></body>
+</html>

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { toMap, buildCards, findIssues, imageUrl, isAbsolute } from '../src/meta.js';
+import { toMap, buildCards, findIssues, imageUrl, isAbsolute, jsSetTags } from '../src/meta.js';
 
 const good = {
   url: 'https://www.example.com/post/1',
@@ -109,4 +109,25 @@ test('buildCards prefers twitter:* for X and og:* elsewhere', () => {
 test('description falls back to meta name="description"', () => {
   const page = { url: 'https://a.com/', title: 't', metas: [['description', 'Plain description']] };
   assert.equal(buildCards(page).linkedin.description, 'Plain description');
+});
+
+test('served HTML is what gets checked; tags set by JavaScript are warned', () => {
+  // Live DOM is complete, but the server sends a generic title and no image (a typical SPA).
+  const spa = {
+    ...good,
+    served: { title: 'App', metas: [['og:title', 'App'], ['og:description', 'A short description.'], ['twitter:card', 'summary_large_image']] },
+  };
+  assert.deepEqual(jsSetTags(spa), ['og:title', 'og:image']);
+  const issues = findIssues(spa, undefined);
+  assert.match(texts(issues), /Missing og:image/);
+  assert.match(texts(issues), /JavaScript, so crawlers do not see the live value: og:title, og:image/);
+  assert.equal(buildCards(spa).linkedin.title, 'App');
+  assert.equal(buildCards(spa).linkedin.image, '');
+  assert.equal(imageUrl(spa), '');
+});
+
+test('identical served HTML adds no issues; no served HTML falls back to the live page', () => {
+  assert.deepEqual(findIssues({ ...good, served: { title: good.title, metas: good.metas } }, size), []);
+  assert.deepEqual(jsSetTags(good), []);
+  assert.equal(buildCards({ ...good, servedError: 'HTTP 403' }).linkedin.title, 'A good title');
 });

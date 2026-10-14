@@ -69,7 +69,7 @@ def main():
             args=[f"--disable-extensions-except={ext}", f"--load-extension={ext}"],
         )
         make_covers(ctx)
-        for name, scheme in [("good", "light"), ("bad", "light"), ("bad", "dark")]:
+        for name, scheme in [("good", "light"), ("bad", "light"), ("bad", "dark"), ("spa", "light")]:
             target = ctx.new_page()
             target.goto(f"http://127.0.0.1:{PORT}/{name}.html")
             popup = ctx.new_page()

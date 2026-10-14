@@ -5,7 +5,11 @@ import { LIMITS, buildCards, collectMeta, findIssues, imageUrl } from './meta.js
 async function readPage() {
   const param = Number(new URLSearchParams(location.search).get('tab'));
   const tabId = param || (await chrome.tabs.query({ active: true, currentWindow: true }))[0]?.id;
-  const [{ result }] = await chrome.scripting.executeScript({ target: { tabId }, func: collectMeta });
+  const [{ result }] = await chrome.scripting.executeScript({
+    target: { tabId },
+    func: collectMeta,
+    args: [LIMITS.htmlBytes, LIMITS.htmlTimeout * 1000],
+  });
   return result;
 }
 
@@ -106,6 +110,11 @@ export default function App() {
       <header>
         <h1>OG Preview</h1>
         <div className="muted clamp-1">{page.url}</div>
+        <p className="muted small">
+          {page.served
+            ? 'Checked against the HTML the server sends, which is what crawlers read.'
+            : `Checked against the live page; the served HTML could not be read (${page.servedError}).`}
+        </p>
       </header>
 
       <section>

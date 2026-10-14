@@ -1,5 +1,6 @@
 // Pure logic: turn the <meta> tags of a page into card data and an issue list.
 // No chrome.* or DOM access here except collectMeta, which runs inside the page.
+// buildCards, imageUrl and findIssues take the collected page and use what crawlers see.
 
 export const LIMITS = {
   title: 60,
@@ -9,20 +10,56 @@ export const LIMITS = {
   ratio: 1.91,
   ratioTolerance: 0.1,
   imageTimeout: 10, // seconds before an image that has not loaded counts as failed
+  htmlTimeout: 8, // seconds to fetch the served HTML
+  htmlBytes: 1_000_000, // read at most this much of the served HTML
 };
 
 const TWITTER_CARDS = ['summary', 'summary_large_image', 'app', 'player'];
 
-// Injected with chrome.scripting.executeScript, so it must stay self-contained.
-export function collectMeta() {
-  return {
-    url: location.href,
-    title: document.title,
-    metas: [...document.querySelectorAll('meta[property], meta[name]')].map((el) => [
+// Injected with chrome.scripting.executeScript, so it must stay self-contained (limits come in as args).
+// Reads the live DOM, then re-requests the page from inside it (same origin, like a reload) to read the
+// HTML the server sends. Social crawlers read that HTML and usually do not run JavaScript.
+export async function collectMeta(maxBytes, timeoutMs) {
+  const read = (doc) => ({
+    title: doc.title,
+    metas: [...doc.querySelectorAll('meta[property], meta[name]')].map((el) => [
       el.getAttribute('property') || el.getAttribute('name'),
       el.getAttribute('content') || '',
     ]),
-  };
+  });
+  const page = { url: location.href, ...read(document) };
+  try {
+    const res = await fetch(location.href, { cache: 'no-store', signal: AbortSignal.timeout(timeoutMs) });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (!/html/i.test(res.headers.get('content-type') || '')) throw new Error('not an HTML response');
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder(document.characterSet);
+    let html = '';
+    for (let bytes = 0; bytes < maxBytes; ) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      bytes += value.length;
+      html += decoder.decode(value, { stream: true });
+    }
+    reader.cancel();
+    page.served = read(new DOMParser().parseFromString(html, 'text/html'));
+  } catch (err) {
+    page.servedError = err.message;
+  }
+  return page;
+}
+
+// What crawlers read: the served HTML when it could be fetched, otherwise the live DOM.
+export function crawlerView(page) {
+  return page.served ? { url: page.url, ...page.served } : page;
+}
+
+// Share tags that JavaScript added or changed after load, so crawlers do not see the live value.
+export function jsSetTags(page) {
+  if (!page.served) return [];
+  const live = toMap(page.metas);
+  const served = toMap(page.served.metas);
+  return Object.keys(live).filter((k) => /^(og:|twitter:|description$)/.test(k) && live[k] !== served[k]);
 }
 
 // First non-empty value wins, keys are case-insensitive.
@@ -56,7 +93,8 @@ function hostOf(url) {
 
 // What each platform would read. Image is '' when the tag is missing or relative,
 // because crawlers cannot use a relative URL either.
-export function buildCards(page) {
+export function buildCards(collected) {
+  const page = crawlerView(collected);
   const m = toMap(page.metas);
   const pick = (...keys) => keys.map((k) => m[k]).find(Boolean) || '';
   const absolute = (url) => (isAbsolute(url) ? url : '');
@@ -82,14 +120,16 @@ export function buildCards(page) {
 }
 
 // URL to measure: the og:image (or twitter:image) resolved against the page.
-export function imageUrl(page) {
+export function imageUrl(collected) {
+  const page = crawlerView(collected);
   const m = toMap(page.metas);
   const raw = m['og:image'] || m['og:image:url'] || m['twitter:image'] || '';
   return raw ? resolve(raw, page.url) : '';
 }
 
 // imageSize: {width, height} once loaded, null if it failed or timed out, undefined if not checked.
-export function findIssues(page, imageSize) {
+export function findIssues(collected, imageSize) {
+  const page = crawlerView(collected);
   const m = toMap(page.metas);
   const issues = [];
   const error = (text) => issues.push({ level: 'error', text });
@@ -135,6 +175,11 @@ export function findIssues(page, imageSize) {
   const card = m['twitter:card'];
   if (!card) warn('Missing twitter:card. Add summary_large_image to get a large image card on X.');
   else if (!TWITTER_CARDS.includes(card)) warn(`twitter:card "${card}" is not a valid card type.`);
+
+  const jsTags = jsSetTags(collected);
+  if (jsTags.length) {
+    warn(`Set or changed by JavaScript, so crawlers do not see the live value: ${jsTags.join(', ')}. Put them in the served HTML.`);
+  }
 
   return issues;
 }
