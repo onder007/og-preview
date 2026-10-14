@@ -54,7 +54,8 @@ export function crawlerView(page) {
   return page.served ? { url: page.url, ...page.served } : page;
 }
 
-// Share tags that JavaScript added or changed after load, so crawlers do not see the live value.
+// Share tags whose live value differs from the served HTML. Usually JavaScript set them after load, but a
+// value that changes per request (a signed or cache-busting image URL) shows up here as well.
 export function jsSetTags(page) {
   if (!page.served) return [];
   const live = toMap(page.metas);
@@ -197,7 +198,7 @@ export function findIssues(collected, imageSize) {
 
   const jsTags = jsSetTags(collected);
   if (jsTags.length) {
-    warn(`Set or changed by JavaScript, so crawlers do not see the live value: ${jsTags.join(', ')}. Put them in the served HTML.`);
+    warn(`Differs from the served HTML, usually because JavaScript set it: ${jsTags.join(', ')}. Crawlers only see the served value.`);
   }
 
   return issues;

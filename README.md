@@ -22,7 +22,7 @@ Link previews are usually checked after the post is live, when a wrong image or 
 | Title longer than 60 characters | Warning |
 | `og:description` missing, or longer than 160 characters | Warning |
 | `twitter:card` missing or not a valid card type | Warning |
-| An `og:*`, `twitter:*` or `description` tag set or changed by JavaScript | Warning |
+| An `og:*`, `twitter:*` or `description` tag differs between the served HTML and the live page (usually set by JavaScript) | Warning |
 
 The checks run on the HTML the server sends, because social crawlers usually do not run JavaScript. The popup re-requests the page from inside the tab (same origin, like a reload) and compares it with the live DOM, so tags added by a client-side router show up as a warning instead of passing silently. If that request fails (HTTP error, not HTML, or no answer within 8 seconds), the popup falls back to the live page and says so.
 

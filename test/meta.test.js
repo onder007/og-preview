@@ -120,7 +120,7 @@ test('served HTML is what gets checked; tags set by JavaScript are warned', () =
   assert.deepEqual(jsSetTags(spa), ['og:title', 'og:image']);
   const issues = findIssues(spa, undefined);
   assert.match(texts(issues), /Missing og:image/);
-  assert.match(texts(issues), /JavaScript, so crawlers do not see the live value: og:title, og:image/);
+  assert.match(texts(issues), /Differs from the served HTML, usually because JavaScript set it: og:title, og:image\./);
   assert.equal(buildCards(spa).linkedin.title, 'App');
   assert.equal(buildCards(spa).linkedin.image, '');
   assert.equal(imageUrl(spa), '');
