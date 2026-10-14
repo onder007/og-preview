@@ -133,7 +133,7 @@ test('identical served HTML adds no issues; no served HTML falls back to the liv
 });
 
 test('isPrivateHost catches localhost and private, loopback, link-local literals', () => {
-  for (const h of ['localhost', 'app.localhost', '127.0.0.1', '10.1.2.3', '172.16.0.1', '172.31.9.9', '192.168.1.1', '169.254.169.254', '0.0.0.0', '[::1]', '[fd00::1]', '[fe80::1]']) {
+  for (const h of ['localhost', 'app.localhost', '127.0.0.1', '10.1.2.3', '172.16.0.1', '172.31.9.9', '192.168.1.1', '169.254.169.254', '0.0.0.0', '[::1]', '[::]', '[fd00::1]', '[fe80::1]', new URL('http://[::ffff:127.0.0.1]/').hostname]) {
     assert.ok(isPrivateHost(h), h);
   }
   for (const h of ['example.com', '172.32.0.1', '8.8.8.8', 'fd-cdn.example.com', '[2606:4700::1]']) {

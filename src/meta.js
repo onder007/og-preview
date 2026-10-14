@@ -97,7 +97,8 @@ function hostOf(url) {
 export function isPrivateHost(host) {
   const h = host.toLowerCase().replace(/^\[|\]$/g, '');
   if (h === 'localhost' || h.endsWith('.localhost')) return true;
-  if (h.includes(':')) return h === '::1' || /^(f[cd]|fe[89ab])/.test(h);
+  // ::ffff:a.b.c.d (IPv4-mapped, new URL rewrites it to hex) reaches the IPv4 address, so it counts as private too.
+  if (h.includes(':')) return h === '::1' || h === '::' || h.startsWith('::ffff:') || /^(f[cd]|fe[89ab])/.test(h);
   return /^(0|10|127)\./.test(h) || /^(192\.168|169\.254)\./.test(h) || /^172\.(1[6-9]|2\d|3[01])\./.test(h);
 }
 
