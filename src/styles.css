@@ -63,6 +63,18 @@ p { margin: 0; }
 .error .tag { color: var(--error); }
 .warn .tag { color: var(--warn); }
 
+.suggest { margin-top: 10px; }
+.suggest-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.suggest button {
+  font: inherit; font-size: 12px; padding: 2px 10px; border: 1px solid var(--line); border-radius: 4px;
+  background: var(--bg); color: var(--text); cursor: pointer;
+}
+.suggest button:hover { border-color: var(--muted); }
+.suggest pre {
+  margin: 0; padding: 8px; border: 1px solid var(--line); border-radius: 4px;
+  font: 11px/1.5 ui-monospace, Menlo, Consolas, monospace; white-space: pre-wrap; overflow-wrap: anywhere;
+}
+
 /* Card previews always use the platforms' light look. */
 .img { display: block; width: 100%; object-fit: cover; background: #e9ecef; }
 .img.wide { aspect-ratio: 1.91 / 1; }

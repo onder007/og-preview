@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { LIMITS, buildCards, collectMeta, findIssues, imageUrl } from './meta.js';
+import { LIMITS, buildCards, collectMeta, findIssues, imageUrl, suggestTags } from './meta.js';
 
 // ?tab=<id> targets a specific tab (used by the screenshot script); otherwise the active tab.
 async function readPage() {
@@ -23,6 +23,24 @@ function measure(src) {
     img.onerror = () => done(null);
     img.src = src;
   });
+}
+
+function Suggestion({ text }) {
+  const [label, setLabel] = useState('Copy');
+  const copy = () =>
+    navigator.clipboard.writeText(text).then(
+      () => setLabel('Copied'),
+      () => setLabel('Copy failed, select the text'),
+    );
+  return (
+    <div className="suggest">
+      <div className="suggest-head">
+        <span>Tags for the served HTML</span>
+        <button type="button" onClick={copy}>{label}</button>
+      </div>
+      <pre>{text}</pre>
+    </div>
+  );
 }
 
 function Thumb({ src, className }) {
@@ -104,6 +122,7 @@ export default function App() {
   const { page, size } = state;
   const cards = buildCards(page);
   const issues = findIssues(page, size);
+  const suggestion = suggestTags(page);
 
   return (
     <main>
@@ -134,6 +153,7 @@ export default function App() {
           </ul>
         )}
         {size && <p className="muted small">Image: {size.width}x{size.height}</p>}
+        {suggestion && <Suggestion text={suggestion} />}
       </section>
 
       <section>

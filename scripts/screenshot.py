@@ -3,6 +3,7 @@
 Usage: npm run build && python scripts/screenshot.py   (needs `pip install playwright`)
 The popup is opened as a tab with ?tab=<id>. The test copy of the manifest gets a host
 permission for 127.0.0.1, because activeTab is only granted by a real click on the toolbar icon.
+Exits non-zero when a fixture shows an unexpected number of issues or the copy button fails.
 """
 import functools
 import hashlib
@@ -10,6 +11,7 @@ import http.server
 import json
 import os
 import shutil
+import sys
 import tempfile
 import threading
 from pathlib import Path
@@ -68,8 +70,10 @@ def main():
             headless=True,
             args=[f"--disable-extensions-except={ext}", f"--load-extension={ext}"],
         )
+        ctx.grant_permissions(["clipboard-read", "clipboard-write"])
         make_covers(ctx)
-        for name, scheme in [("good", "light"), ("bad", "light"), ("bad", "dark"), ("spa", "light")]:
+        failures = []
+        for name, scheme, expected in [("good", "light", 0), ("bad", "light", 6), ("bad", "dark", 6), ("spa", "light", 2)]:
             target = ctx.new_page()
             target.goto(f"http://127.0.0.1:{PORT}/{name}.html")
             popup = ctx.new_page()
@@ -84,12 +88,23 @@ def main():
             popup.wait_for_load_state("networkidle")
             out = OUT / f"popup-{name}{'-dark' if scheme == 'dark' else ''}.png"
             popup.screenshot(path=str(out), full_page=True)
-            print(out, "issues:", popup.locator(".issues li").count())
+            count = popup.locator(".issues li").count()
+            print(out, "issues:", count)
+            if count != expected:
+                failures.append(f"{name}: {count} issues, expected {expected}")
+            if expected:
+                # Every fixture with issues gets a suggested <meta> block; the button copies exactly that text.
+                popup.click(".suggest button")
+                popup.wait_for_selector(".suggest button:text('Copied')", timeout=2000)
+                if popup.evaluate("navigator.clipboard.readText()") != popup.inner_text(".suggest pre"):
+                    failures.append(f"{name}: clipboard does not match the suggested tags")
             target.close()
             popup.close()
         ctx.close()
     server.shutdown()
     shutil.rmtree(tmp, ignore_errors=True)
+    if failures:
+        sys.exit("FAIL\n" + "\n".join(failures))
 
 
 if __name__ == "__main__":

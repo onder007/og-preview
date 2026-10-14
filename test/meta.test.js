@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { toMap, buildCards, findIssues, imageUrl, isAbsolute, isPrivateHost, jsSetTags } from '../src/meta.js';
+import { toMap, buildCards, findIssues, imageUrl, isAbsolute, isPrivateHost, jsSetTags, suggestTags } from '../src/meta.js';
 
 const good = {
   url: 'https://www.example.com/post/1',
@@ -152,4 +152,44 @@ test('an og:image on localhost is an error on a public page and is never loaded'
   const local = { ...page, url: 'http://localhost:3000/post/1' };
   assert.equal(imageUrl(local), 'http://localhost:3000/og.png');
   assert.deepEqual(findIssues(local, size), []);
+});
+
+test('suggestTags is empty for a complete page', () => {
+  assert.equal(suggestTags(good), '');
+});
+
+test('suggestTags fills missing tags from the page, resolves relative images, escapes values', () => {
+  const page = { url: 'https://a.com/post', title: 'Tom & "Jerry" <3', metas: [['description', 'Plain'], ['og:image', '/c.png'], ['twitter:card', 'big']] };
+  assert.equal(
+    suggestTags(page),
+    [
+      '<meta property="og:title" content="Tom &amp; &quot;Jerry&quot; &lt;3">',
+      '<meta property="og:description" content="Plain">',
+      '<meta property="og:image" content="https://a.com/c.png">',
+      '<meta name="twitter:card" content="summary_large_image">',
+    ].join('\n'),
+  );
+});
+
+test('suggestTags asks for an image when there is none or it is on a private address', () => {
+  const noImage = { ...good, metas: good.metas.filter(([k]) => k !== 'og:image') };
+  assert.equal(suggestTags(noImage), '<!-- Fill in og:image: an absolute https:// URL of a 1200x630 image. -->\n<meta property="og:image" content="">');
+  const local = { ...good, metas: [['og:image', 'http://localhost:3000/og.png'], ...good.metas] };
+  assert.match(suggestTags(local), /<meta property="og:image" content="">/);
+});
+
+test('suggestTags moves tags set by JavaScript into the served HTML with their live values', () => {
+  const spa = {
+    ...good,
+    metas: [['twitter:title', 'Live X title'], ...good.metas],
+    served: { title: 'App', metas: [['og:title', 'App'], ['og:description', 'A short description.'], ['twitter:card', 'summary_large_image']] },
+  };
+  assert.equal(
+    suggestTags(spa),
+    [
+      '<meta property="og:title" content="A good title">',
+      '<meta property="og:image" content="https://cdn.example.com/cover.png">',
+      '<meta name="twitter:title" content="Live X title">',
+    ].join('\n'),
+  );
 });

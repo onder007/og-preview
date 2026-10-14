@@ -204,3 +204,34 @@ export function findIssues(collected, imageSize) {
 
   return issues;
 }
+
+const escapeAttr = (v) => v.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+// A <meta> block to paste into the served HTML for the tags that are missing, broken or only set by
+// JavaScript. Values come from the live page where it has them; '' when nothing is known.
+export function suggestTags(collected) {
+  const page = crawlerView(collected);
+  const served = toMap(page.metas);
+  const live = toMap(collected.metas);
+  const fromJs = jsSetTags(collected);
+  const needed = (key) => !served[key] || fromJs.includes(key);
+  const tags = {};
+
+  if (needed('og:title')) tags['og:title'] = live['og:title'] || page.title || collected.title || '';
+  if (needed('og:description')) tags['og:description'] = live['og:description'] || live.description || served.description || '';
+  const image = fromJs.includes('og:image') ? live['og:image'] : served['og:image'] || served['og:image:url'];
+  if (!image || isPrivateImage(resolve(image, page.url), page.url)) tags['og:image'] = '';
+  else if (!isAbsolute(image) || fromJs.includes('og:image')) tags['og:image'] = resolve(image, page.url);
+  const card = served['twitter:card'];
+  if (!card || !TWITTER_CARDS.includes(card) || fromJs.includes('twitter:card')) {
+    tags['twitter:card'] = TWITTER_CARDS.includes(live['twitter:card']) ? live['twitter:card'] : 'summary_large_image';
+  }
+  for (const key of fromJs) if (!(key in tags)) tags[key] = live[key];
+
+  const lines = Object.entries(tags).map(([key, value]) => {
+    const attr = key.startsWith('og:') ? 'property' : 'name';
+    return `<meta ${attr}="${key}" content="${escapeAttr(value)}">`;
+  });
+  if (tags['og:image'] === '') lines.unshift('<!-- Fill in og:image: an absolute https:// URL of a 1200x630 image. -->');
+  return lines.join('\n');
+}
