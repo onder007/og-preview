@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { buildCards, collectMeta, findIssues, imageUrl } from './meta.js';
+import { LIMITS, buildCards, collectMeta, findIssues, imageUrl } from './meta.js';
 
 // ?tab=<id> targets a specific tab (used by the screenshot script); otherwise the active tab.
 async function readPage() {
@@ -13,6 +13,8 @@ function measure(src) {
   return new Promise((done) => {
     if (!src) return done(undefined);
     const img = new Image();
+    // A server that never answers would otherwise keep the popup on "Reading page..." for minutes.
+    setTimeout(() => done(null), LIMITS.imageTimeout * 1000);
     img.onload = () => done({ width: img.naturalWidth, height: img.naturalHeight });
     img.onerror = () => done(null);
     img.src = src;

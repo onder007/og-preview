@@ -14,7 +14,7 @@ Link previews are usually checked after the post is live, when a wrong image or 
 |---|---|
 | `og:image` missing | Error |
 | `og:image`, `og:image:url` or `twitter:image` is a relative URL | Error |
-| Image fails to load | Error |
+| Image fails to load or takes longer than 10 s | Error |
 | Image smaller than 1200x630 | Warning |
 | Image ratio not about 1.91:1 (tolerance 0.1) | Warning |
 | `og:title` missing (falls back to `<title>`; error if both are missing) | Warning |

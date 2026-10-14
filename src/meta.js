@@ -8,6 +8,7 @@ export const LIMITS = {
   minHeight: 630,
   ratio: 1.91,
   ratioTolerance: 0.1,
+  imageTimeout: 10, // seconds before an image that has not loaded counts as failed
 };
 
 const TWITTER_CARDS = ['summary', 'summary_large_image', 'app', 'player'];
@@ -87,7 +88,7 @@ export function imageUrl(page) {
   return raw ? resolve(raw, page.url) : '';
 }
 
-// imageSize: {width, height} once loaded, null if it failed to load, undefined if not checked.
+// imageSize: {width, height} once loaded, null if it failed or timed out, undefined if not checked.
 export function findIssues(page, imageSize) {
   const m = toMap(page.metas);
   const issues = [];
@@ -103,7 +104,7 @@ export function findIssues(page, imageSize) {
   }
 
   if (imageSize === null && (ogImage || m['twitter:image'])) {
-    error('The image could not be loaded.');
+    error(`The image failed to load or took longer than ${LIMITS.imageTimeout} seconds.`);
   } else if (imageSize) {
     const { width, height } = imageSize;
     if (width < LIMITS.minWidth || height < LIMITS.minHeight) {

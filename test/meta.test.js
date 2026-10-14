@@ -63,7 +63,7 @@ test('large image with the right ratio passes, 2:1 is within tolerance', () => {
 });
 
 test('an image that fails to load is an error', () => {
-  assert.match(texts(findIssues(good, null)), /could not be loaded/);
+  assert.match(texts(findIssues(good, null)), /failed to load or took longer than 10 seconds/);
 });
 
 test('long title and description are warned', () => {
