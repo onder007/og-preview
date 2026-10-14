@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "OG Preview",
+  "version": "0.1.0",
+  "description": "See how the current page looks when shared on X, LinkedIn and WhatsApp, and which Open Graph tags need fixing.",
+  "action": {
+    "default_popup": "index.html",
+    "default_title": "OG Preview"
+  },
+  "permissions": ["activeTab", "scripting"]
+}
