@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <defs>
+    <clipPath id="card"><rect x="28" y="32" width="72" height="64" rx="8"/></clipPath>
+  </defs>
+  <rect x="16" y="16" width="96" height="96" rx="22" fill="#1a1a1a"/>
+  <rect x="28" y="32" width="72" height="64" rx="8" fill="#fff"/>
+  <g clip-path="url(#card)">
+    <rect x="28" y="32" width="72" height="34" fill="#1e7a3a"/>
+    <polygon points="28,66 48,48 60,58 72,46 100,66" fill="#155c2b"/>
+    <circle cx="86" cy="43" r="5" fill="#fff" fill-opacity="0.85"/>
+  </g>
+  <rect x="36" y="73" width="46" height="7" rx="3.5" fill="#1a1a1a"/>
+  <rect x="36" y="85" width="30" height="6" rx="3" fill="#b8bcc2"/>
+</svg>
