@@ -2,7 +2,7 @@
   "name": "og-preview",
   "version": "0.1.0",
   "private": true,
-  "description": "Chrome extension that previews how the current page looks when shared on X, LinkedIn and WhatsApp, and lists Open Graph problems.",
+  "description": "Chrome extension that lists Open Graph problems and previews how the current page looks when shared on X, LinkedIn and WhatsApp.",
   "type": "module",
   "scripts": {
     "dev": "vite",

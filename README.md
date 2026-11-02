@@ -1,6 +1,6 @@
 # OG Preview
 
-A Chrome extension (Manifest V3) that shows how the page in the current tab will look when its link is shared on X, LinkedIn and WhatsApp, and lists the Open Graph and Twitter Card tags that need fixing.
+A Chrome extension (Manifest V3) that shows how the page in the current tab will look when its link is shared on X, LinkedIn and WhatsApp. It also lists the Open Graph and Twitter Card tags that need fixing.
 
 ![Popup on a page with common mistakes](docs/popup-bad.png)
 
