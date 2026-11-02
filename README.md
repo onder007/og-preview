@@ -83,4 +83,4 @@ The thresholds live in `LIMITS` at the top of `src/meta.js`.
 
 ## License
 
-TBD (private for now).
+MIT, see [LICENSE](LICENSE).

@@ -2,6 +2,7 @@
   "name": "og-preview",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
   "description": "Chrome extension that lists Open Graph problems and previews how the current page looks when shared on X, LinkedIn and WhatsApp.",
   "type": "module",
   "scripts": {

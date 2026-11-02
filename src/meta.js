@@ -103,7 +103,7 @@ export function isPrivateHost(host) {
 }
 
 // An image on a private address while the page itself is public: crawlers cannot fetch it (a typical
-// leftover of a build-time base URL like http://localhost:3000), and the popup does not load it either,
+// leftover of a build-time base URL like http://localhost:3000). The popup does not load it either,
 // so a page cannot use the extension to send requests into the local network.
 export function isPrivateImage(url, pageUrl) {
   return isPrivateHost(hostOf(url)) && !isPrivateHost(hostOf(pageUrl));
