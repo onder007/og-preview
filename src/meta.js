@@ -92,16 +92,21 @@ function hostOf(url) {
   }
 }
 
-// localhost and loopback, private or link-local IP literals (new URL already normalises 0x7f.1 and the like).
+// localhost, names that never resolve publicly and loopback, private, shared or link-local IP literals
+// (new URL already normalises 0x7f.1 and the like).
 // ponytail: names that only resolve to a private IP (router.lan) are not caught; that needs a DNS lookup.
 export function isPrivateHost(host) {
   const h = host.toLowerCase().replace(/^\[|\]$/g, '');
-  if (h === 'localhost' || h.endsWith('.localhost')) return true;
+  // Suffixes reserved for local use, not public domains: .local (mDNS), .internal, .test, .home.arpa.
+  if (/(^|\.)(localhost|local|internal|test|home\.arpa)$/.test(h)) return true;
   // ::ffff:a.b.c.d (IPv4-mapped, new URL rewrites it to hex) reaches the IPv4 address, so it counts as private too.
   if (h.includes(':')) return h === '::1' || h === '::' || h.startsWith('::ffff:') || /^(f[cd]|fe[89ab])/.test(h);
+  // A single-label name is a Docker service or hosts-file entry (http://web:3000); '' is a page without a host.
+  if (!h.includes('.')) return h !== '';
   // Only IPv4 literals: 0.gravatar.com and 10.cdn.example.com are public names.
   if (!/^\d+\.\d+\.\d+\.\d+$/.test(h)) return false;
-  return /^(0|10|127)\./.test(h) || /^(192\.168|169\.254)\./.test(h) || /^172\.(1[6-9]|2\d|3[01])\./.test(h);
+  return /^(0|10|127)\./.test(h) || /^(192\.168|169\.254)\./.test(h) || /^172\.(1[6-9]|2\d|3[01])\./.test(h)
+    || /^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\./.test(h); // 100.64.0.0/10: carrier-grade NAT, Tailscale
 }
 
 // An image on a private address while the page itself is public: crawlers cannot fetch it (a typical

@@ -14,7 +14,7 @@ Link previews are usually checked after the post is live, when a wrong image or 
 |---|---|
 | `og:image` missing | Error |
 | `og:image`, `og:image:url` or `twitter:image` is a relative URL | Error |
-| Image URL on `localhost` or a private IP while the page is public (e.g. a build-time base URL left at `http://localhost:3000`) | Error |
+| Image URL on a local address while the page is public (e.g. a build-time base URL left at `http://localhost:3000`) | Error |
 | Image fails to load or takes longer than 10 s | Error |
 | Image smaller than 1200x630 | Warning |
 | Image ratio not about 1.91:1 (tolerance 0.1) | Warning |
@@ -43,7 +43,9 @@ Open `chrome://extensions`, turn on Developer mode, click "Load unpacked" and pi
 
 ## Permissions
 
-Only `activeTab` and `scripting`. When you click its icon, the extension reads the `<meta>` tags of the current tab and requests the tab's own URL once more from inside the page (at most 1 MB, 8 second timeout). It does not contact any other server apart from loading the preview image, has no background script and stores nothing. An image URL on `localhost` or a private IP is not loaded when the page itself is public, so a page cannot use the popup to send requests into your local network.
+Only `activeTab` and `scripting`. When you click its icon, the extension reads the `<meta>` tags of the current tab and requests the tab's own URL once more from inside the page (at most 1 MB, 8 second timeout). It does not contact any other server apart from loading the preview image, has no background script and stores nothing. An image URL on a local address is not loaded when the page itself is public, so a page cannot use the popup to send requests into your local network.
+
+A local address here means `localhost`, a private, loopback, link-local or `100.64.0.0/10` IP, a single-label host (`http://web:3000`) or a name ending in `.local`, `.internal`, `.test` or `.home.arpa`. Other names that only resolve to a private IP on your network are not detected.
 
 ## Tests
 

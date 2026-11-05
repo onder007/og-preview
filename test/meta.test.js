@@ -139,6 +139,13 @@ test('isPrivateHost catches localhost and private, loopback, link-local literals
   for (const h of ['example.com', '172.32.0.1', '8.8.8.8', 'fd-cdn.example.com', '[2606:4700::1]', '0.gravatar.com', '10.cdn.example.com', '192.168.example.com', '172.16.images.example.com']) {
     assert.ok(!isPrivateHost(h), h);
   }
+  // Names crawlers cannot resolve: single-label hosts (Docker services, hosts-file entries) and reserved suffixes.
+  for (const h of ['web', 'nginx', 'api.local', 'my-app.test', 'cms.internal', 'nas.home.arpa', '100.64.0.1', '100.127.255.254']) {
+    assert.ok(isPrivateHost(h), h);
+  }
+  for (const h of ['', 'localhost.example.com', 'local.example.com', 'test.com', 'internal.co', '100.63.0.1', '100.128.0.1']) {
+    assert.ok(!isPrivateHost(h), h);
+  }
   // new URL normalises other IPv4 spellings before the check.
   assert.equal(new URL('http://0x7f.1/').hostname, '127.0.0.1');
 });
@@ -152,6 +159,14 @@ test('an og:image on localhost is an error on a public page and is never loaded'
   const local = { ...page, url: 'http://localhost:3000/post/1' };
   assert.equal(imageUrl(local), 'http://localhost:3000/og.png');
   assert.deepEqual(findIssues(local, size), []);
+});
+
+test('an og:image on a Docker service name or a .test domain is an error on a public page', () => {
+  for (const url of ['http://web:3000/og.png', 'http://my-app.test/og.png']) {
+    const page = { ...good, metas: [['og:image', url], ...good.metas] };
+    assert.match(texts(findIssues(page, undefined)), /og:image points to a local or private address/);
+    assert.equal(imageUrl(page), '');
+  }
 });
 
 test('suggestTags is empty for a complete page', () => {

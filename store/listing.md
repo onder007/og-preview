@@ -26,7 +26,7 @@ OG Preview shows how the page in your current tab will look when its link is sha
 It reads the tags from the open tab, so it works on staging and localhost too. You do not need a public URL or a separate debugger for each platform.
 
 WHAT IT CHECKS
-- og:image: missing, a relative URL, or on localhost or a private IP while the page is public
+- og:image: missing, a relative URL, or on localhost, a private IP or another local-only name while the page is public
 - The image: fails to load, smaller than 1200x630 or far from the 1.91:1 ratio
 - og:title: missing or longer than 60 characters
 - og:description: missing or longer than 160 characters
