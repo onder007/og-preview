@@ -193,6 +193,20 @@ test('suggestTags asks for an image when there is none or it is on a private add
   assert.match(suggestTags(local), /<meta property="og:image" content="">/);
 });
 
+test('suggestTags fixes a twitter:image that findIssues reports', () => {
+  const relative = { ...good, metas: [['twitter:image', '/x.png'], ...good.metas] };
+  assert.match(texts(findIssues(relative, size)), /twitter:image is a relative URL/);
+  assert.equal(suggestTags(relative), '<meta name="twitter:image" content="https://www.example.com/x.png">');
+
+  const local = { ...good, metas: [['twitter:image', 'http://localhost:3000/x.png'], ...good.metas] };
+  assert.equal(suggestTags(local), '<!-- Fill in twitter:image: an absolute https:// URL of a 1200x630 image. -->\n<meta name="twitter:image" content="">');
+});
+
+test('suggestTags resolves a relative twitter:image set by JavaScript', () => {
+  const spa = { ...good, metas: [['twitter:image', '/x.png'], ...good.metas], served: { title: good.title, metas: good.metas } };
+  assert.equal(suggestTags(spa), '<meta name="twitter:image" content="https://www.example.com/x.png">');
+});
+
 test('suggestTags moves tags set by JavaScript into the served HTML with their live values', () => {
   const spa = {
     ...good,

@@ -26,7 +26,7 @@ Link previews are usually checked after the post is live, when a wrong image or 
 
 The checks run on the HTML the server sends, because social crawlers usually do not run JavaScript. The popup re-requests the page from inside the tab (same origin, like a reload) and compares it with the live DOM, so tags added by a client-side router show up as a warning instead of passing silently. If that request fails (HTTP error, not HTML, or no answer within 8 seconds), the popup falls back to the live page and says so.
 
-When something is missing, broken or only set by JavaScript, the popup also shows a ready `<meta>` block for the served HTML with a Copy button. It takes the values from the live page where it has them (resolving a relative image URL against the page) and leaves `og:image` empty with a comment when there is no usable image. It does not shorten a title or description that is too long.
+When something is missing, broken or only set by JavaScript, the popup also shows a ready `<meta>` block for the served HTML with a Copy button. It takes the values from the live page where it has them (resolving a relative image URL against the page) and leaves `og:image` or `twitter:image` empty with a comment when it has no usable value. It does not shorten a title or description that is too long.
 
 The previews follow each platform's fallbacks: X reads `twitter:*` first and then `og:*`; LinkedIn and WhatsApp read `og:*`, then `<title>` and `meta name="description"`. A relative image URL is shown as "No image", because crawlers cannot resolve it either.
 

@@ -226,9 +226,13 @@ export function suggestTags(collected) {
 
   if (needed('og:title')) tags['og:title'] = live['og:title'] || page.title || collected.title || '';
   if (needed('og:description')) tags['og:description'] = live['og:description'] || live.description || served.description || '';
-  const image = fromJs.includes('og:image') ? live['og:image'] : served['og:image'] || served['og:image:url'];
-  if (!image || isPrivateImage(resolve(image, page.url), page.url)) tags['og:image'] = '';
-  else if (!isAbsolute(image) || fromJs.includes('og:image')) tags['og:image'] = resolve(image, page.url);
+  const fixImage = (key, image) => {
+    if (!image || isPrivateImage(resolve(image, page.url), page.url)) tags[key] = '';
+    else if (!isAbsolute(image) || fromJs.includes(key)) tags[key] = resolve(image, page.url);
+  };
+  fixImage('og:image', fromJs.includes('og:image') ? live['og:image'] : served['og:image'] || served['og:image:url']);
+  const twitterImage = fromJs.includes('twitter:image') ? live['twitter:image'] : served['twitter:image'];
+  if (twitterImage) fixImage('twitter:image', twitterImage); // optional, unlike og:image: no tag is not a problem
   const card = served['twitter:card'];
   if (!card || !TWITTER_CARDS.includes(card) || fromJs.includes('twitter:card')) {
     tags['twitter:card'] = TWITTER_CARDS.includes(live['twitter:card']) ? live['twitter:card'] : 'summary_large_image';
@@ -239,6 +243,8 @@ export function suggestTags(collected) {
     const attr = key.startsWith('og:') ? 'property' : 'name';
     return `<meta ${attr}="${key}" content="${escapeAttr(value)}">`;
   });
-  if (tags['og:image'] === '') lines.unshift('<!-- Fill in og:image: an absolute https:// URL of a 1200x630 image. -->');
+  for (const key of ['twitter:image', 'og:image']) {
+    if (tags[key] === '') lines.unshift(`<!-- Fill in ${key}: an absolute https:// URL of a 1200x630 image. -->`);
+  }
   return lines.join('\n');
 }
