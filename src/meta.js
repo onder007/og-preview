@@ -99,6 +99,8 @@ export function isPrivateHost(host) {
   if (h === 'localhost' || h.endsWith('.localhost')) return true;
   // ::ffff:a.b.c.d (IPv4-mapped, new URL rewrites it to hex) reaches the IPv4 address, so it counts as private too.
   if (h.includes(':')) return h === '::1' || h === '::' || h.startsWith('::ffff:') || /^(f[cd]|fe[89ab])/.test(h);
+  // Only IPv4 literals: 0.gravatar.com and 10.cdn.example.com are public names.
+  if (!/^\d+\.\d+\.\d+\.\d+$/.test(h)) return false;
   return /^(0|10|127)\./.test(h) || /^(192\.168|169\.254)\./.test(h) || /^172\.(1[6-9]|2\d|3[01])\./.test(h);
 }
 
