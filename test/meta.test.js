@@ -169,6 +169,16 @@ test('an og:image on a Docker service name or a .test domain is an error on a pu
   }
 });
 
+test('a trailing dot does not hide a local host', () => {
+  for (const url of ['http://localhost./og.png', 'http://web./og.png', 'http://printer.local./og.png', 'http://cms.internal./og.png']) {
+    const page = { ...good, metas: [['og:image', url], ...good.metas] };
+    assert.match(texts(findIssues(page, undefined)), /og:image points to a local or private address/);
+    assert.equal(imageUrl(page), '');
+    assert.equal(buildCards(page).linkedin.image, '');
+  }
+  assert.ok(!isPrivateHost('example.com.'));
+});
+
 test('suggestTags is empty for a complete page', () => {
   assert.equal(suggestTags(good), '');
 });

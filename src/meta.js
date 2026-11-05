@@ -96,7 +96,8 @@ function hostOf(url) {
 // (new URL already normalises 0x7f.1 and the like).
 // ponytail: names that only resolve to a private IP (router.lan) are not caught; that needs a DNS lookup.
 export function isPrivateHost(host) {
-  const h = host.toLowerCase().replace(/^\[|\]$/g, '');
+  // A trailing dot (localhost.) resolves to the same host and new URL keeps it on names.
+  const h = host.toLowerCase().replace(/^\[|\]$/g, '').replace(/\.$/, '');
   // Suffixes reserved for local use, not public domains: .local (mDNS), .internal, .test, .home.arpa.
   if (/(^|\.)(localhost|local|internal|test|home\.arpa)$/.test(h)) return true;
   // ::ffff:a.b.c.d (IPv4-mapped, new URL rewrites it to hex) reaches the IPv4 address, so it counts as private too.
