@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { toMap, buildCards, findIssues, imageUrl, isAbsolute, isPrivateHost, jsSetTags, suggestTags } from '../src/meta.js';
+import { toMap, buildCards, collectMeta, findIssues, imageUrl, isAbsolute, isPrivateHost, jsSetTags, suggestTags } from '../src/meta.js';
 
 const good = {
   url: 'https://www.example.com/post/1',
@@ -231,4 +231,53 @@ test('suggestTags moves tags set by JavaScript into the served HTML with their l
       '<meta name="twitter:title" content="Live X title">',
     ].join('\n'),
   );
+});
+
+// collectMeta runs inside the page: stub the few globals it reads.
+async function runCollect(response, maxBytes = 1000) {
+  const saved = { fetch: globalThis.fetch, document: globalThis.document, location: globalThis.location, DOMParser: globalThis.DOMParser };
+  const doc = { title: 'Live', characterSet: 'utf-8', querySelectorAll: () => [] };
+  let parsed = null;
+  globalThis.document = doc;
+  globalThis.location = { href: 'https://example.com/' };
+  globalThis.DOMParser = class { parseFromString(html) { parsed = html; return doc; } };
+  globalThis.fetch = async () => response;
+  try {
+    const page = await collectMeta(maxBytes, 1000);
+    return { page, parsed };
+  } finally {
+    for (const [k, v] of Object.entries(saved)) {
+      if (v === undefined) delete globalThis[k];
+      else globalThis[k] = v;
+    }
+  }
+}
+const htmlResponse = (chunks, init = {}) => {
+  const enc = new TextEncoder();
+  let i = 0;
+  return {
+    ok: true,
+    status: 200,
+    headers: { get: () => 'text/html; charset=utf-8' },
+    body: { getReader: () => ({ read: async () => (i < chunks.length ? { done: false, value: enc.encode(chunks[i++]) } : { done: true }), cancel() {} }) },
+    ...init,
+  };
+};
+
+test('collectMeta sets servedError on an HTTP error status', async () => {
+  const { page } = await runCollect(htmlResponse([], { ok: false, status: 403 }));
+  assert.equal(page.servedError, 'HTTP 403');
+  assert.equal(page.served, undefined);
+});
+
+test('collectMeta sets servedError on a non-HTML content type', async () => {
+  const { page } = await runCollect(htmlResponse([], { headers: { get: () => 'application/json' } }));
+  assert.equal(page.servedError, 'not an HTML response');
+  assert.equal(page.served, undefined);
+});
+
+test('collectMeta stops reading the body at the byte cap', async () => {
+  const { page, parsed } = await runCollect(htmlResponse(['aaaa', 'bbbb', 'cccc']), 6);
+  assert.equal(page.servedError, undefined);
+  assert.equal(parsed, 'aaaabbbb');
 });
