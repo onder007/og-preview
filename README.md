@@ -32,6 +32,8 @@ The previews follow each platform's fallbacks: X reads `twitter:*` first and the
 
 ## Quick start
 
+Install from the [Chrome Web Store](https://chromewebstore.google.com/detail/og-preview/aebejjedjbfbfgcgbogmigemhooenhao). To build it yourself:
+
 ```bash
 npm install
 npm run build
@@ -46,6 +48,8 @@ Open `chrome://extensions`, turn on Developer mode, click "Load unpacked" and pi
 Only `activeTab` and `scripting`. When you click its icon, the extension reads the `<meta>` tags of the current tab and requests the tab's own URL once more from inside the page (at most 1 MB, 8 second timeout). It does not contact any other server apart from loading the preview image, has no background script and stores nothing. An image URL on a local address is not loaded when the page itself is public.
 
 A local address here means `localhost`, a private, loopback, link-local or `100.64.0.0/10` IP, a single-label host (`http://web:3000`) or a name ending in `.local`, `.internal`, `.test` or `.home.arpa`, with or without a trailing dot. Other names that only resolve to a private IP on your network are not detected.
+
+The Chrome Web Store version (0.1.0) checks only `localhost` and private, loopback or link-local IPs. The rest of the list above is in `main`, not in that version.
 
 ## Tests
 
@@ -81,7 +85,6 @@ The thresholds live in `LIMITS` at the top of `src/meta.js`.
 - Only the first 1 MB of the served HTML is read.
 - No checks yet for image file size, image format (SVG and WebP support differs per platform) or redirects of the image URL.
 - Browser pages (`chrome://`, the Chrome Web Store) cannot be read by extensions.
-- Not published on the Chrome Web Store.
 
 ## License
 
