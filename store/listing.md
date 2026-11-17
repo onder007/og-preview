@@ -68,7 +68,7 @@ OG Preview shows how the current page will look when its link is shared on socia
 **Permission justifications:**
 - `activeTab`
   ```text
-  Gives the popup access to the current tab only, after the user clicks the toolbar icon, to read the page address and its <meta> tags. The extension never runs on other tabs or without a click.
+  Gives the popup access to the current tab only, after the user clicks the toolbar icon, to read the page address and its <meta> tags. The extension runs only on the tab where the user clicked its icon.
   ```
 - `scripting`
   ```text
@@ -77,7 +77,7 @@ OG Preview shows how the current page will look when its link is shared on socia
 
 **Remote code:** No, I am not using remote code.
 
-**Data usage:** tick **Website content** (the meta tags and HTML of the current tab are processed in the popup and never leave the device). Do not tick the others.
+**Data usage:** tick **Website content** (the meta tags and HTML of the current tab are processed in the popup and the extension has no server of its own to send them to). Do not tick the others.
 Then tick all three certifications (not sold to third parties, not used for unrelated purposes, not used for creditworthiness).
 
 **Privacy policy URL:** `https://github.com/onder007/og-preview/blob/main/PRIVACY.md`
